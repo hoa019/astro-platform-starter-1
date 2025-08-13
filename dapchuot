@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Đập Chuột Trả Lời Câu Hỏi - Có Tùy Chỉnh & Quản Lý Câu Hỏi</title>
+<style>
+  :root{
+    --accent:#ff9800;
+    --accent-dark:#e68900;
+    --gold:#ffd54f;
+    --bg:#f2f2f2;
+  }
+  body {
+    font-family: Arial, tahoma, sans-serif;
+    text-align: center;
+    background-color: var(--bg);
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    margin-top: 6px;
+    color: #d84315;
+    text-shadow: 2px 2px 4px #fff;
+  }
+  #topBar {
+    margin-top: 10px;
+    padding: 14px;
+    background: linear-gradient(45deg, #ffecb3, var(--gold));
+    border: 3px solid var(--accent);
+    border-radius: 15px;
+    width: 92%;
+    max-width: 980px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+  }
+  #topBar p {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 6px 0;
+    color: #e65100;
+    text-shadow: 1px 1px 2px #fff;
+  }
+  #topBar .meta {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #bf360c;
+    text-shadow: 1px 1px 2px #fff;
+  }
+  #timeBarContainer {
+    width: 92%;
+    max-width: 980px;
+    height: 18px;
+    background: #ddd;
+    border-radius: 12px;
+    margin: 10px auto;
+    overflow: hidden;
+    border: 2px solid #bbb;
+  }
+  #timeBar {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #ffeb3b, #f44336);
+    width: 100%;
+    transition: width 1s linear;
+  }
+
+  /* Cài đặt phần tùy chỉnh */
+  #settingsPanel {
+    width: 92%;
+    max-width: 980px;
+    margin: 20px auto;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    justify-content: center;
+    font-weight: 700;
+    color: #222;
+  }
+  #settingsPanel label {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    min-width: 140px;
+    user-select: none;
+  }
+  #settingsPanel input[type=number],
+  #settingsPanel select {
+    margin-top: 6px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  /* Game grid */
+  #game {
+    display: grid;
+    grid-template-columns: repeat(3, 120px);
+    grid-gap: 14px;
+    justify-content: center;
+    margin-top: 26px;
+    padding-bottom: 10px;
+  }
+  .hole {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(180deg,#7a3f12,#5a2a0e);
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 -6px 10px rgba(0,0,0,0.35), 0 6px 10px rgba(0,0,0,0.15);
+  }
+  .mole {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 30% 30%, #fff176 0%, #ffd54f 20%, #f9a825 50%);
+    border-radius: 50%;
+    position: absolute;
+    bottom: -110%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 14px;
+    transition: bottom 0.25s cubic-bezier(.2,.9,.3,1), transform 0.12s;
+    text-align: center;
+    padding: 6px;
+    user-select: none;
+  }
+  .mole.up { bottom: 0; }
+  .mole:active { transform: scale(0.94); }
+  #controls {
+    margin-top: 18px;
+  }
+  button.controlBtn {
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+    margin: 0 6px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  }
+  button.controlBtn:hover { background: var(--accent-dark); }
+
+  /* Responsive */
+  @media (max-width:700px){
+    #game { grid-template-columns: repeat(3, 90px); grid-gap:10px; }
+    .hole{ width:90px; height:90px; }
+    #topBar p { font-size: 18px; }
+  }
+
+  /* Phần quản lý câu hỏi */
+  #questionEditor {
+    width: 92%;
+    max-width: 980px;
+    margin: 20px auto;
+    background: #fff9e6;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+    font-weight: 700;
+    color: #222;
+    text-align: left;
+  }
+  #questionEditor h2 {
+    color: #bf360c;
+    margin-top: 0;
+  }
+  #questionsList {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 8px;
+    margin-bottom: 12px;
+    background: white;
+  }
+  #questionsList div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+    padding: 6px 4px;
+    font-size: 14px;
+  }
+  #questionsList div:last-child {
+    border-bottom: none;
+  }
+  #questionsList button {
+    margin-left: 8px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+  }
+  #questionsList button.editBtn {
+    background: var(--accent);
+    color: white;
+  }
+  #questionsList button.deleteBtn {
+    background: #d32f2f;
+    color: white;
+  }
+  #questionForm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+  }
+  #questionForm label {
+    flex: 1 1 45%;
+    display: flex;
+    flex-direction: column;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  #questionForm label.fullWidth {
+    flex-basis: 100%;
+  }
+  #questionForm input[type=text],
+  #questionForm select {
+    margin-top: 6px;
+    padding: 6px 8px;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+  #questionForm div.buttons {
+    flex-basis: 100%;
+    text-align: center;
+    margin-top: 10px;
+  }
+  #questionForm button {
+    padding: 10px 24px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  #questionForm button.saveBtn {
+    background: var(--accent);
+    color: white;
+  }
+  #questionForm button.cancelBtn {
+    background: #999;
+    color: white;
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+  <h1>Đập Chuột Trả Lời Câu Hỏi</h1>
+
+  <div id="settingsPanel" aria-label="Cài đặt trò chơi">
+    <label>Thời gian chơi (giây):
+      <input type="number" id="timeSetting" min="10" max="120" value="30" />
+    </label>
+    <label>Số câu hỏi:
+      <input type="number" id="questionCountSetting" min="1" max="50" value="10" />
+    </label>
+    <label>Tốc độ hiện chuột (ms):
+      <input type="number" id="speedSetting" min="500" max="10000" value="3000" />
+    </label>
+    <label>Độ khó:
+      <select id="difficultySetting">
+        <option value="dễ" selected>Dễ</option>
+        <option value="trung bình">Trung bình</option>
+        <option value="khó">Khó</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- Nút ẩn/hiện quản lý câu hỏi -->
+  <div style="width:92%; max-width:980px; margin: 20px auto; text-align: right;">
+    <button id="toggleQuestionEditorBtn" aria-pressed="false" aria-expanded="false" aria-controls="questionEditor" 
+            style="font-weight:700; padding:8px 16px; border-radius:10px; border:none; background:#ff9800; color:#fff; cursor:pointer;">
+      Hiển thị Quản lý Câu hỏi
+    </button>
+  </div>
+
+  <!-- Phần quản lý câu hỏi -->
+  <div id="questionEditor" aria-label="Quản lý câu hỏi" style="display:none;">
+    <h2>Quản lý Câu hỏi</h2>
+    <div id="questionsList" tabindex="0" aria-live="polite" aria-relevant="all" aria-label="Danh sách câu hỏi hiện có">
+      <!-- Danh sách câu hỏi hiện tại sẽ được hiển thị ở đây -->
+    </div>
+    <form id="questionForm" aria-label="Thêm hoặc sửa câu hỏi">
+      <input type="hidden" id="editIndex" value="-1" />
+      <label class="fullWidth">Câu hỏi:
+        <input type="text" id="inputQuestion" required aria-required="true" />
+      </label>
+      <label>Đáp án A:
+        <input type="text" id="inputAnswer0" required aria-required="true" />
+      </label>
+      <label>Đáp án B:
+        <input type="text" id="inputAnswer1" required aria-required="true" />
+      </label>
+      <label>Đáp án C:
+        <input type="text" id="inputAnswer2" required aria-required="true" />
+      </label>
+      <label>Đáp án D:
+        <input type="text" id="inputAnswer3" required aria-required="true" />
+      </label>
+      <label class="fullWidth">Đáp án đúng:
+        <select id="inputCorrect" required aria-required="true">
+          <option value="0">A</option>
+          <option value="1">B</option>
+          <option value="2">C</option>
+          <option value="3">D</option>
+        </select>
+      </label>
+      <div class="buttons">
+        <button type="submit" class="saveBtn">Lưu câu hỏi</button>
+        <button type="button" id="cancelEdit" class="cancelBtn">Hủy</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="topBar" role="region" aria-live="polite">
+    <p id="question">Bấm bắt đầu để chơi</p>
+    <div class="meta">
+      Điểm: <span id="score">0</span> &nbsp; | &nbsp; Thời gian: <span id="timer">30</span>
+    </div>
+  </div>
+
+  <div id="timeBarContainer" aria-hidden="false">
+    <div id="timeBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"></div>
+  </div>
+
+  <div id="game" aria-hidden="false">
+    <div class="hole"><div class="mole" tabindex="0"></div></div>
+    <div class="hole"><div class="mole" tabindex="0"></div></div>
+    <div class="hole"><div class="mole" tabindex="0"></div></div>
+    <div class="hole"><div class="mole" tabindex="0"></div></div>
+    <div class="hole"><div class="mole" tabindex="0"></div></div>
+    <div class="hole"><div class="mole" tabindex="0"></div></div>
+  </div>
+
+  <div id="controls">
+    <button id="startButton" class="controlBtn">Bắt đầu</button>
+    <button id="resetButton" class="controlBtn" style="display:none;">Chơi lại</button>
+  </div>
+
+  <audio id="backgroundMusic" loop>
+    <source src="background.mp3" type="audio/mpeg" />
+    Trình duyệt của bạn không hỗ trợ thẻ audio.
+  </audio>
+
+  <script>
+    const startButton = document.getElementById("startButton");
+    const resetButton = document.getElementById("resetButton");
+    const scoreDisplay = document.getElementById("score");
+    const timerDisplay = document.getElementById("timer");
+    const questionDisplay = document.getElementById("question");
+    const timeBar = document.getElementById("timeBar");
+    const moles = document.querySelectorAll(".mole");
+    const backgroundMusic = document.getElementById("backgroundMusic");
+
+    const timeSetting = document.getElementById("timeSetting");
+    const questionCountSetting = document.getElementById("questionCountSetting");
+    const speedSetting = document.getElementById("speedSetting");
+    const difficultySetting = document.getElementById("difficultySetting");
+
+    let score = 0;
+    let time = 30;
+    let timerId = null;
+    let moleTimeoutId = null;
+    let gameStarted = false;
+    let availableQuestions = [];
+
+    // Câu hỏi mặc định ban đầu
+    const questions = [
+      { question: "Chất nào sau đây là ester?", answers: ["CH3COOC2H5", "HCOOH", "CH3CHO", "CH3OH"], correct: 0 },
+    ];
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function chooseQuestionAndAnswers() {
+      if (availableQuestions.length === 0) {
+        availableQuestions = shuffleArray([...questions]);
+      }
+      const currentQuestion = availableQuestions.pop();
+      questionDisplay.textContent = currentQuestion.question;
+      const shuffledAnswers = shuffleArray([...currentQuestion.answers]);
+      moles.forEach((mole, i) => {
+        mole.textContent = shuffledAnswers[i] || "";
+        mole.dataset.correct = (shuffledAnswers[i] === currentQuestion.answers[currentQuestion.correct]) ? "true" : "false";
+      });
+    }
+
+    function popMole() {
+      if (!gameStarted) return;
+      clearTimeout(moleTimeoutId);
+      chooseQuestionAndAnswers();
+
+      let correctIndex = -1;
+      moles.forEach((mole, idx) => {
+        if (mole.dataset.correct === "true") correctIndex = idx;
+      });
+
+      let numToPop = 2;
+      if (difficultySetting.value === "dễ") numToPop = 2;
+      else if (difficultySetting.value === "trung bình") numToPop = 3;
+      else if (difficultySetting.value === "khó") numToPop = 4;
+      numToPop = Math.min(numToPop, moles.length);
+
+      let popIndices = [correctIndex];
+      while (popIndices.length < numToPop) {
+        const rand = Math.floor(Math.random() * moles.length);
+        if (!popIndices.includes(rand)) popIndices.push(rand);
+      }
+
+      moles.forEach((mole, idx) => {
+        mole.classList.remove("up");
+        mole.style.pointerEvents = "none";
+      });
+
+      popIndices.forEach(idx => {
+        moles[idx].classList.add("up");
+        moles[idx].style.pointerEvents = "auto";
+      });
+
+      moleTimeoutId = setTimeout(popMole, parseInt(speedSetting.value));
+    }
+
+    function startGame() {
+      if (gameStarted) return;
+      gameStarted = true;
+      score = 0;
+      scoreDisplay.textContent = score;
+      time = parseInt(timeSetting.value);
+      timerDisplay.textContent = time;
+      availableQuestions = shuffleArray([...questions]);
+      startButton.style.display = "none";
+      resetButton.style.display = "inline-block";
+
+      backgroundMusic.play().catch(() => {}); // play background music
+
+      popMole();
+
+      timerId = setInterval(() => {
+        time--;
+        timerDisplay.textContent = time;
+        timeBar.style.width = (time * 100 / parseInt(timeSetting.value)) + "%";
+        timeBar.setAttribute("aria-valuenow", (time * 100 / parseInt(timeSetting.value)).toFixed(0));
+        if (time <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      gameStarted = false;
+      clearInterval(timerId);
+      clearTimeout(moleTimeoutId);
+      moles.forEach(mole => {
+        mole.classList.remove("up");
+        mole.style.pointerEvents = "none";
+      });
+      questionDisplay.textContent = "Kết thúc! Điểm của bạn: " + score;
+      startButton.style.display = "inline-block";
+      resetButton.style.display = "none";
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+      timeBar.style.width = "0%";
+      timeBar.setAttribute("aria-valuenow", 0);
+    }
+
+    moles.forEach(mole => {
+      mole.addEventListener("click", () => {
+        if (!gameStarted) return;
+        if (mole.dataset.correct === "true") {
+          score++;
+        } else {
+          score = Math.max(0, score - 1);
+        }
+        scoreDisplay.textContent = score;
+        
+        mole.classList.remove("up");
+        mole.style.pointerEvents = "none";
+      });
+    });
+
+    startButton.addEventListener("click", startGame);
+    resetButton.addEventListener("click", () => {
+      if (gameStarted) endGame();
+      score = 0;
+      scoreDisplay.textContent = score;
+      questionDisplay.textContent = "Bấm bắt đầu để chơi";
+      timeBar.style.width = "100%";
+      timerDisplay.textContent = timeSetting.value;
+      startButton.style.display = "inline-block";
+      resetButton.style.display = "none";
+    });
+
+    /*
+      Quản lý câu hỏi: thêm sửa xóa
+    */
+    const toggleQuestionEditorBtn = document.getElementById("toggleQuestionEditorBtn");
+    const questionEditor = document.getElementById("questionEditor");
+    const questionsList = document.getElementById("questionsList");
+    const questionForm = document.getElementById("questionForm");
+    const inputQuestion = document.getElementById("inputQuestion");
+    const inputAnswer0 = document.getElementById("inputAnswer0");
+    const inputAnswer1 = document.getElementById("inputAnswer1");
+    const inputAnswer2 = document.getElementById("inputAnswer2");
+    const inputAnswer3 = document.getElementById("inputAnswer3");
+    const inputCorrect = document.getElementById("inputCorrect");
+    const editIndexInput = document.getElementById("editIndex");
+    const cancelEditBtn = document.getElementById("cancelEdit");
+
+    toggleQuestionEditorBtn.addEventListener("click", () => {
+      const isHidden = questionEditor.style.display === "none";
+      if (isHidden) {
+        questionEditor.style.display = "block";
+        toggleQuestionEditorBtn.textContent = "Ẩn Quản lý Câu hỏi";
+        toggleQuestionEditorBtn.setAttribute("aria-pressed", "true");
+        toggleQuestionEditorBtn.setAttribute("aria-expanded", "true");
+      } else {
+        questionEditor.style.display = "none";
+        toggleQuestionEditorBtn.textContent = "Hiển thị Quản lý Câu hỏi";
+        toggleQuestionEditorBtn.setAttribute("aria-pressed", "false");
+        toggleQuestionEditorBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    function renderQuestionsList() {
+      questionsList.innerHTML = "";
+      questions.forEach((q, index) => {
+        const div = document.createElement("div");
+        div.textContent = (index + 1) + ". " + q.question;
+        const btnEdit = document.createElement("button");
+        btnEdit.textContent = "Sửa";
+        btnEdit.className = "editBtn";
+        btnEdit.setAttribute("aria-label", "Sửa câu hỏi " + (index + 1));
+        btnEdit.addEventListener("click", () => startEditQuestion(index));
+
+        const btnDelete = document.createElement("button");
+        btnDelete.textContent = "Xóa";
+        btnDelete.className = "deleteBtn";
+        btnDelete.setAttribute("aria-label", "Xóa câu hỏi " + (index + 1));
+        btnDelete.addEventListener("click", () => deleteQuestion(index));
+
+        div.appendChild(btnEdit);
+        div.appendChild(btnDelete);
+        questionsList.appendChild(div);
+      });
+    }
+
+    function startEditQuestion(index) {
+      const q = questions[index];
+      inputQuestion.value = q.question;
+      inputAnswer0.value = q.answers[0];
+      inputAnswer1.value = q.answers[1];
+      inputAnswer2.value = q.answers[2];
+      inputAnswer3.value = q.answers[3];
+      inputCorrect.value = q.correct;
+      editIndexInput.value = index;
+      inputQuestion.focus();
+    }
+
+    function deleteQuestion(index) {
+      if (confirm("Bạn có chắc muốn xóa câu hỏi này?")) {
+        questions.splice(index, 1);
+        renderQuestionsList();
+      }
+    }
+
+    questionForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const q = {
+        question: inputQuestion.value.trim(),
+        answers: [
+          inputAnswer0.value.trim(),
+          inputAnswer1.value.trim(),
+          inputAnswer2.value.trim(),
+          inputAnswer3.value.trim(),
+        ],
+        correct: parseInt(inputCorrect.value, 10),
+      };
+      if (editIndexInput.value === "-1") {
+        // Thêm mới
+        questions.push(q);
+      } else {
+        // Sửa
+        questions[parseInt(editIndexInput.value, 10)] = q;
+      }
+      editIndexInput.value = "-1";
+      questionForm.reset();
+      renderQuestionsList();
+    });
+
+    cancelEditBtn.addEventListener("click", () => {
+      editIndexInput.value = "-1";
+      questionForm.reset();
+    });
+
+    // Khởi tạo danh sách câu hỏi lúc đầu
+    renderQuestionsList();
+  </script>
+</body>
+</html>
